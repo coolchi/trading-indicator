@@ -11,10 +11,12 @@ const detachSource = (ohlcv) => {
   source.low = []
   source.close = []
   source.volume = []
+  source.timestamp = []
   if (ohlcv.length == 0) {
     return source
   }
   ohlcv.forEach((data) => {
+    source.timestamp.push(data[timeIndex])
     source.open.push(data[oIndex])
     source.high.push(data[hIndex])
     source.low.push(data[lIndex])

@@ -7,6 +7,11 @@ module.exports = {
     ...require('./indicators/roc.js'),
 };
 
+const exchangeId = process.argv[2];
+const interval = process.argv[3] || '1h';
+const symbolLimit = 10;
+// const symbols = ['BTC/USDT'];
+
 const signalsConfig = [
     {
         name: 'bot1',
@@ -41,9 +46,6 @@ const signalsConfig = [
         }
     }
 ];
-
-const exchangeId = process.argv[2];
-const interval = process.argv[3] || '1h';
 
 // Function to fetch all tickers
 const fetchAllTickers = async (exchangeId) => {
@@ -82,14 +84,16 @@ const calculateIndicators = async (symbol, config) => {
         for (const indicator of Object.entries(indicators)) {
             const [type, length] = indicator[0].split('_');
             if (type === 'rsi') {
-            results[indicator[0]] = await module.exports.rsi(parseInt(length), 'close', input);
+                results[indicator[0]] = await module.exports.rsi(parseInt(length), 'close', input);
             } else if (type === 'roc') {
-            const rocValues = await module.exports.roc(parseInt(length), 'close', input);
-            results[indicator[0]] = rocValues.map(value => parseFloat(value.toFixed(2)));
+                const rocValues = await module.exports.roc(parseInt(length), 'close', input);
+                results[indicator[0]] = rocValues.map(value => parseFloat(value.toFixed(2)));
             }
         }
 
         const closes = input.close;
+        const timestamps = input.timestamp; // Add this line to get timestamps
+        console.log(timestamps);
 
         const signals = [];
         let counter = 1;
@@ -98,40 +102,41 @@ const calculateIndicators = async (symbol, config) => {
             const lastClose = closes[closes.length - counter];
             const highest = input.high[input.high.length - counter];
             const lowest = input.low[input.low.length - counter];
+            const timestamp = timestamps[timestamps.length - counter]; // Add this line to get the timestamp
 
             if (results.rsi_6 && results.roc_10) {
-            const lastRsi6 = results.rsi_6[results.rsi_6.length - counter];
-            const lastRoc10 = results.roc_10[results.roc_10.length - counter];
+                const lastRsi6 = results.rsi_6[results.rsi_6.length - counter];
+                const lastRoc10 = results.roc_10[results.roc_10.length - counter];
 
-            let indicator = { "rsi_6": lastRsi6, "roc_10": lastRoc10 };
+                let indicator = { "rsi_6": lastRsi6, "roc_10": lastRoc10 };
 
-            const criteriaMet = Object.entries(indicators).every(([key, value]) => {
-                const [type] = key.split('_');
-                const indicatorValue = results[key][results[key].length - counter];
+                const criteriaMet = Object.entries(indicators).every(([key, value]) => {
+                    const [type] = key.split('_');
+                    const indicatorValue = results[key][results[key].length - counter];
 
-                //Checking rsi_6 with value 30 and indicatorValue 65.93 for symbol LQTY/USDT
-                console.log(`Checking ${key} with value ${value} and indicatorValue ${indicatorValue} for symbol ${symbol}`);
+                    //Checking rsi_6 with value 30 and indicatorValue 65.93 for symbol LQTY/USDT
+                    console.log(`Checking ${key} with value ${value} and indicatorValue ${indicatorValue} for symbol ${symbol}`);
 
-                if (type === 'rsi') {
-                return config.direction === 'long' ? indicatorValue < value : indicatorValue > value;
-                } else if (type === 'roc') {
-                return config.direction === 'long' ? indicatorValue < value : indicatorValue > value;
-                }
-                return false;
-            });
-
-            if (criteriaMet) {
-                signals.push({
-                symbol,
-                interval: interval,
-                time: new Date().toLocaleString('en-GB', { hour12: false }),
-                price: lastClose,
-                highest,
-                lowest,
-                indicator,
-                direction: config.direction
+                    if (type === 'rsi') {
+                        return config.direction === 'long' ? indicatorValue < value : indicatorValue > value;
+                    } else if (type === 'roc') {
+                        return config.direction === 'long' ? indicatorValue < value : indicatorValue > value;
+                    }
+                    return false;
                 });
-            }
+
+                if (criteriaMet) {
+                    signals.push({
+                        symbol,
+                        interval: interval,
+                        time: new Date(timestamp).toLocaleString('en-GB', { hour12: false }), // Add this line to include the timestamp
+                        price: lastClose,
+                        highest,
+                        lowest,
+                        indicator,
+                        direction: config.direction
+                    });
+                }
             }
         }
 
@@ -142,7 +147,6 @@ const calculateIndicators = async (symbol, config) => {
         }
 
         // console.log(`Results for ${symbol}:`, limitedResults);
-
         return {
             symbol,
             indicators: limitedResults,
@@ -193,7 +197,7 @@ const main = async () => {
         }
 
         const usdtSymbols = allSymbols.filter(symbol => symbol.endsWith('USDT'));
-        const limitedSymbols = usdtSymbols.slice(0, 100);
+        const limitedSymbols = usdtSymbols.slice(0, symbolLimit);
         const cleanedSymbols = limitedSymbols.map(symbol => symbol.replace(':USDT', ''));
         const symbolChunks = chunk(cleanedSymbols, 20);
 

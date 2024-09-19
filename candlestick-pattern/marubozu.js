@@ -2,7 +2,7 @@ const { bullishmarubozu, bearishmarubozu } = require('technicalindicators')
 
 const isBullishMarubozuPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-2, -1),
       high: input.high.slice(-2, -1),
       low: input.low.slice(-2, -1),
@@ -15,7 +15,7 @@ const isBullishMarubozuPattern = async (input) => {
 }
 const isBearishMarubozuPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-2, -1),
       high: input.high.slice(-2, -1),
       low: input.low.slice(-2, -1),

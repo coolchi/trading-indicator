@@ -2,7 +2,7 @@ const { eveningstar, eveningdojistar } = require('technicalindicators')
 
 const isEveningStarPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-4, -1),
       high: input.high.slice(-4, -1),
       low: input.low.slice(-4, -1),
@@ -16,7 +16,7 @@ const isEveningStarPattern = async (input) => {
 
 const isEveningDojiStarPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-4, -1),
       high: input.high.slice(-4, -1),
       low: input.low.slice(-4, -1),

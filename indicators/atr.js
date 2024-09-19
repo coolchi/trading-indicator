@@ -2,9 +2,9 @@ const indicators = require('technicalindicators')
 
 const atr = async (period, input) => {
   try {
-    let atrInput = {
+    const atrInput = {
       ...input,
-      period: period,
+      period,
     }
     return await indicators.atr.calculate(atrInput)
   } catch (err) {

@@ -5,7 +5,7 @@ const bb = async (bbLength, stdDev, sourceType, input) => {
     return await indicators.BollingerBands.calculate({
       values: input[sourceType],
       period: bbLength,
-      stdDev: stdDev,
+      stdDev,
     })
   } catch (err) {
     throw err

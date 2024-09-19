@@ -7,15 +7,13 @@ const indicators = require('technicalindicators')
 //     close
 // }
 
-const adxCalculator = async (adxInput) => {
-  return await indicators.ADX.calculate(adxInput)
-}
+const adxCalculator = async (adxInput) => await indicators.ADX.calculate(adxInput)
 
 const adx = async (period, input) => {
   try {
-    let adxInput = {
+    const adxInput = {
       ...input,
-      period: period,
+      period,
     }
     return await adxCalculator(adxInput)
   } catch (err) {

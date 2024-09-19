@@ -2,12 +2,12 @@ const indicators = require('technicalindicators')
 
 const ichimokuCloud = async (conversionPeriod, basePeriod, spanPeriod, displacement, input) => {
   try {
-    let ichimokuCloudInput = {
+    const ichimokuCloudInput = {
       ...input,
-      conversionPeriod: conversionPeriod,
-      basePeriod: basePeriod,
-      spanPeriod: spanPeriod,
-      displacement: displacement,
+      conversionPeriod,
+      basePeriod,
+      spanPeriod,
+      displacement,
     }
     return await indicators.IchimokuCloud.calculate(ichimokuCloudInput)
   } catch (err) {

@@ -2,7 +2,7 @@ const { bearishengulfingpattern, bullishengulfingpattern } = require('technicali
 
 const isBearishEngulfingPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-3, -1),
       high: input.high.slice(-3, -1),
       low: input.low.slice(-3, -1),
@@ -16,7 +16,7 @@ const isBearishEngulfingPattern = async (input) => {
 
 const isBullishEngulfingPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-3, -1),
       high: input.high.slice(-3, -1),
       low: input.low.slice(-3, -1),

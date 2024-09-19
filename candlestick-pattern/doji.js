@@ -17,7 +17,7 @@ const isDojiPattern = async (input) => {
 
 const isDragonFlyDojiPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-2, -1),
       high: input.high.slice(-2, -1),
       low: input.low.slice(-2, -1),
@@ -30,7 +30,7 @@ const isDragonFlyDojiPattern = async (input) => {
 }
 const isGraveStoneDojiPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-2, -1),
       high: input.high.slice(-2, -1),
       low: input.low.slice(-2, -1),

@@ -1,8 +1,9 @@
 const ccxt = require('ccxt')
+
 const ticker = async (ex, ticker, isFuture = false) => {
   try {
-    let exchangeId = ex,
-      exchangeClass = ccxt[exchangeId]
+    const exchangeId = ex
+    const exchangeClass = ccxt[exchangeId]
 
     let exchange
     if (isFuture) {

@@ -1,7 +1,8 @@
 const { abandonedbaby } = require('technicalindicators')
+
 const isAbandonedBabyPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-4, -1),
       high: input.high.slice(-4, -1),
       low: input.low.slice(-4, -1),

@@ -2,7 +2,7 @@ const { bearishharami, bullishharami, bullishharamicross, bearishharamicross } =
 
 const isBearishHaramiPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-3, -1),
       high: input.high.slice(-3, -1),
       low: input.low.slice(-3, -1),
@@ -16,7 +16,7 @@ const isBearishHaramiPattern = async (input) => {
 
 const isBullishHaramiPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-3, -1),
       high: input.high.slice(-3, -1),
       low: input.low.slice(-3, -1),
@@ -30,7 +30,7 @@ const isBullishHaramiPattern = async (input) => {
 
 const isBullishHaramiCrossPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-3, -1),
       high: input.high.slice(-3, -1),
       low: input.low.slice(-3, -1),
@@ -43,7 +43,7 @@ const isBullishHaramiCrossPattern = async (input) => {
 }
 const isBearishHaramiCrossPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-3, -1),
       high: input.high.slice(-3, -1),
       low: input.low.slice(-3, -1),

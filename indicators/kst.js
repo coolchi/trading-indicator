@@ -13,7 +13,7 @@ const kst = async (
   signalPeriod
 ) => {
   try {
-    let kstInput = {
+    const kstInput = {
       values: input.close,
       ROCPer1: rocLength1,
       ROCPer2: rocLength2,
@@ -23,7 +23,7 @@ const kst = async (
       SMAROCPer2: smaLength2,
       SMAROCPer3: smaLength3,
       SMAROCPer4: smaLength4,
-      signalPeriod: signalPeriod,
+      signalPeriod,
     }
     return await indicators.KST.calculate(kstInput)
   } catch (err) {

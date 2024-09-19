@@ -41,8 +41,10 @@
     },
     "homepage": "https://github.com/thanhnguyennguyen/trading-indicator#readme",
     "dependencies": {
-        "ccxt": "^1.95.36",
-        "technicalindicators": "^3.0.0"
+        "ccxt": "^4.4.3",
+        "lodash": "^4.17.21",
+        "technicalindicators": "^3.0.0",
+        "trading-indicator": "^2.0.4"
     },
     "devDependencies": {
         "eslint": "^7.13.0",

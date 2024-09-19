@@ -2,7 +2,7 @@ const indicators = require('technicalindicators')
 
 const rsi = async (rsiLength, sourceType, input) => {
   try {
-    let rsiInput = {
+    const rsiInput = {
       values: input[sourceType],
       period: rsiLength,
     }

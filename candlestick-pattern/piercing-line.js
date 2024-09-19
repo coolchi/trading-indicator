@@ -2,7 +2,7 @@ const { piercingline } = require('technicalindicators')
 
 const isPiercingLinePattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-3, -1),
       high: input.high.slice(-3, -1),
       low: input.low.slice(-3, -1),

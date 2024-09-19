@@ -2,7 +2,7 @@ const { shootingstar } = require('technicalindicators')
 
 const isShootingStarPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-6, -1),
       high: input.high.slice(-6, -1),
       low: input.low.slice(-6, -1),

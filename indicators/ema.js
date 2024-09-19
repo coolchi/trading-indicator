@@ -2,7 +2,7 @@ const indicators = require('technicalindicators')
 
 const ema = async (emaLength, sourceType, input) => {
   try {
-    let emaInput = {
+    const emaInput = {
       values: input[sourceType],
       period: emaLength,
     }

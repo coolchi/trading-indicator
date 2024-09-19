@@ -2,7 +2,7 @@ const indicators = require('technicalindicators')
 
 const cci = async (cciPeriod, input) => {
   try {
-    let cciInput = {
+    const cciInput = {
       ...input,
       period: cciPeriod,
     }

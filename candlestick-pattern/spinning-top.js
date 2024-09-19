@@ -2,7 +2,7 @@ const { bearishspinningtop, bullishspinningtop } = require('technicalindicators'
 
 const isBullishSpinningTopPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-2, -1),
       high: input.high.slice(-2, -1),
       low: input.low.slice(-2, -1),
@@ -16,7 +16,7 @@ const isBullishSpinningTopPattern = async (input) => {
 
 const isBearishSpinningTopPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-2, -1),
       high: input.high.slice(-2, -1),
       low: input.low.slice(-2, -1),

@@ -2,7 +2,7 @@ const { tweezerbottom, tweezertop } = require('technicalindicators')
 
 const isTweezerBottomPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-6, -1),
       high: input.high.slice(-6, -1),
       low: input.low.slice(-6, -1),
@@ -16,7 +16,7 @@ const isTweezerBottomPattern = async (input) => {
 
 const isTweezerTopPattern = async (input) => {
   try {
-    let singleInput = {
+    const singleInput = {
       open: input.open.slice(-6, -1),
       high: input.high.slice(-6, -1),
       low: input.low.slice(-6, -1),

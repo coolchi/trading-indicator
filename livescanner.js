@@ -15,7 +15,7 @@ const signalsConfig = [
     {
         name: 'bot1',
         interval: '1h',
-        backtrack: 240                                                                      ,
+        backtrack: 1                                                                      ,
         direction: 'long',
         indicators: {
             rsi_6: 10,
@@ -27,7 +27,7 @@ const signalsConfig = [
     {
         name: 'bot2',
         interval: '1h',
-        backtrack: 240,
+        backtrack: 1,
         direction: 'short',
         indicators: {
             rsi_6: 80,

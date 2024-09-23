@@ -1,3 +1,5 @@
+const ccxt = require('ccxt'); // Ensure ccxt is imported at the top
+
 module.exports = {
   ...require('./indicators/input.js'),
 
@@ -8,7 +10,6 @@ module.exports = {
   ...require('./indicators/mfi.js'),
   ...require('./indicators/obv.js'),
   ...require('./indicators/rsi.js'),
-  ...require('./indicators/roc.js'),
   ...require('./indicators/sma.js'),
   ...require('./indicators/stochasticrsi.js'),
   ...require('./indicators/ticker.js'),
@@ -39,95 +40,37 @@ module.exports = {
   ...require('./candlestick-pattern/tweezer.js'),
 }
 
-const ccxt = require('ccxt')
-
-const exchangeId = process.argv[2]
-const symbol = process.argv[3]
-console.log(exchangeId, symbol)
-const timeframe = process.argv[4] || '1h'
+const fetchAllTickers = async (exchangeId) => {
+    try {
+        const exchange = new ccxt[exchangeId]({
+            options: { defaultType: 'future' } // Adjust the market type if needed
+        });
+        await exchange.loadMarkets(); // Load all markets (available symbols)
+        const tickers = await exchange.fetchTickers(); // Fetch all tickers
+        console.log(`Available tickers on ${exchangeId}:`, Object.keys(tickers)); // Print all available tickers
+        return Object.keys(tickers); // Return only the symbol names
+    } catch (error) {
+        console.error(`Error fetching tickers from ${exchangeId}:`, error.message);
+        return [];
+    }
+};
 
 // console.log(module);
 // examples for testing
 const main = async () => {
   try {
-    // async function fetchAllTickers(exchangeId) {
-    //     try {
-    //       // Initialize the exchange with a specific market type
-    //       const exchange = new ccxt[exchangeId]({
-    //         options: {
-    //           defaultType: 'swap',  // For perpetual contracts
-    //         }
-    //       });
+    const exchangeId = process.argv[2] || 'bybit'; // Get exchangeId from command line arguments
+    const tickers = await fetchAllTickers(exchangeId);
 
-    //       // Load all markets (available symbols)
-    //       await exchange.loadMarkets();
-
-    //       // Fetch all tickers
-    //       const tickers = await exchange.fetchTickers();
-
-    //       // Log the tickers data
-    //       console.log(`All tickers from ${exchangeId} (swap market):`, tickers);
-    //       return tickers;
-    //     } catch (error) {
-    //       console.error(`Error fetching tickers from ${exchangeId}:`, error.message);
-    //     }
-    //   }
-
-    // Example usage: Fetch all tickers from Bybit (swap market)
-    //   await fetchAllTickers(exchangeId);
-    //   return;
-
-    async function runConcurrentTasks(symbols, timeframe) {
-      try {
-        // const promises = [ module.exports.getDetachSourceFromOHLCV(exchangeId, symbol, timeframe, true)];
-
-        symbols = symbols.split(',')
-        console.log('Running concurrent tasks for symbols:', symbols) // Log symbols
-        const promises = symbols.map((symbol) => {
-          console.log('Processing symbol:', symbol) // Log each symbol
-          return module.exports.getDetachSourceFromOHLCV(exchangeId, symbol, timeframe, true)
-        })
-
-        // Wait for all promises to resolve
-        const results = await Promise.all(promises)
-        for (result of results) {
-          // get rsidata
-          const rocData = await module.exports.roc(6, 'close', result.input)
-          console.log(rocData.slice(-5))
-        }
-        // Log results to inspect structure
-        // console.log('Results:', results);
-
-        // Adjust this based on actual structure
-        // const input1 = results[0]?.input;
-        // console.log(input1);
-      } catch (error) {
-        console.error('Error running concurrent tasks:', error)
-      }
+    if (!tickers.includes('10000000AIDOGE/USDT:USDT')) {
+      console.error('Ticker 10000000AIDOGE/USDT:USDT is not supported');
+      return;
     }
 
-    await runConcurrentTasks('BTC/USDT,LTC/USDT,ETHUSDT,ADAUSDT,NOTUSDT,TIAUSDT', timeframe)
-    return
+    const { input } = await module.exports.getDetachSourceFromOHLCV(exchangeId, '10000000AIDOGE/USDT:USDT', '1h', true)
 
-    const startTime = Date.now() // Capture the start time
-
-    // Await the concurrent tasks
-    // await runConcurrentTasks(symbol, timeframe);
-
-    const endTime = Date.now() // Capture the end time
-
-    // Calculate the time taken in seconds
-    const timeTaken = (endTime - startTime) / 1000
-    console.log(`Time taken: ${timeTaken} seconds`)
-
-    // return; //
-    console.log(`RSI 14 on Binance ${symbol} ${timeframe}`)
-
-    const { input } = await module.exports.getDetachSourceFromOHLCV(exchangeId, symbol, timeframe, true)
-    console.log(`RSI 14 on Binance ${symbol} ${timeframe}`)
-    // const rsidata = await ti.roc(6, 'close', input)
-    const rocData = await module.exports.roc(6, 'close', input)
-    console.log(rocData.slice(-5))
+    // console.log('RSI 14 on Binance BTC/USDT 1h')
+    // console.log(await module.exports.rsi(14, 'close', input))
 
     // console.log('SMA 8 on Binance BTC/USDT 1h')
     // let smaData = await module.exports.sma(8, 'close', input)
@@ -153,8 +96,8 @@ const main = async () => {
     // console.log('Test MA cross')
     // console.log(await module.exports.maCross(50, 200, input))
 
-    // console.log('Test RSIcheck')
-    // console.log(await module.exports.rsiCheck(6, 75, 25, input))
+    console.log('Test RSIcheck')
+    console.log(await module.exports.rsiCheck(14, 75, 25, input))
 
     // console.log('Test SMA cross')
     // console.log(await module.exports.priceCrossSMA(14, input))
@@ -270,7 +213,6 @@ const main = async () => {
     // console.log('Test KST')
     // console.log(await module.exports.kst(input, 10, 15, 20, 30, 10, 10, 10, 15, 9))
   } catch (err) {
-    console.log(err)
     console.log(err)
   }
 }

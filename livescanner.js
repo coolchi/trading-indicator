@@ -8,8 +8,9 @@ module.exports = {
 };
 
 const exchangeId = process.argv[2];
-const interval = process.argv[3] || '1h';
-const symbolLimit = 300;
+// const interval = process.argv[3] || '1h';
+const symbolLimit = 10;
+const returnType = 'json'; // 'json' or 'table'
 
 const signalsConfig = [
     {
@@ -18,11 +19,9 @@ const signalsConfig = [
         backtrack: 1                                                                      ,
         direction: 'long',
         indicators: {
-            rsi_6: 10,
-            roc_10: -5,
-        },
-        sl: -20,
-        tp: 5
+            rsi_6: 50,
+            roc_10: -0,
+        }
     },
     {
         name: 'bot2',
@@ -32,9 +31,7 @@ const signalsConfig = [
         indicators: {
             rsi_6: 80,
             roc_10: 5,
-        },
-        sl: -20,
-        tp: 5
+        }
     },
     {
         name: 'bot3',
@@ -45,9 +42,7 @@ const signalsConfig = [
             rsi_6: 10,
             roc_10: 15,
             rsi_14: 12
-        },
-        sl: -2,
-        tp: 5
+        }
     }
 ];
 
@@ -55,11 +50,11 @@ const signalsConfig = [
 const fetchAllTickers = async (exchangeId) => {
     try {
         const exchange = new ccxt[exchangeId]({
-            options: { defaultType: 'swap' } // For perpetual contracts
+            options: { defaultType: 'futures' } // For perpetual contracts
         });
         await exchange.loadMarkets(); // Load all markets (available symbols)
         const tickers = await exchange.fetchTickers(); // Fetch all tickers
-        console.log(`Available tickers on ${exchangeId}:`, Object.keys(tickers)); // Print all available tickers
+        // console.log(`Available tickers on ${exchangeId}:`, Object.keys(tickers)); // Print all available tickers
         return Object.keys(tickers); // Return only the symbol names
     } catch (error) {
         console.error(`Error fetching tickers from ${exchangeId}:`, error.message);
@@ -73,7 +68,8 @@ async function calculateIndicators(symbol, config) {
 
     try {
         const ohlcvData = await module.exports.getDetachSourceFromOHLCV(exchangeId, symbol, interval, true);
-        // console.log(ohlcvData);
+        // sleep for 1 second to avoid rate limiting
+        // await new Promise(resolve => setTimeout(resolve, 2000));
 
         if (!ohlcvData || !ohlcvData.input) {
             throw new Error(`No OHLCV data available for ${symbol}`);
@@ -109,7 +105,10 @@ async function calculateIndicators(symbol, config) {
             const timestamp = timestamps[timestamps.length - counter];
 
             if (results.rsi_6 && results.roc_10) {
-                // console.log(`Checking signals for ${symbol} at timestamp ${timestamp}`);
+
+                if ( returnType !== 'json') {
+                    console.log(`Checking signals for ${symbol} at timestamp ${timestamp}`);
+                }
 
                 const lastRsi6 = results.rsi_6[results.rsi_6.length - counter];
                 const lastRoc10 = results.roc_10[results.roc_10.length - counter];
@@ -137,8 +136,6 @@ async function calculateIndicators(symbol, config) {
                 });
 
                 if (criteriaMet) {
-                    console.log(`Fetching next candles for ${symbol} at timestamp ${timestamp}`);
-                    const nextCandles = await fetchNextCandles(symbol, timestamp, input, lastClose, config);
                     signals.push({
                         symbol,
                         interval: interval,
@@ -149,7 +146,6 @@ async function calculateIndicators(symbol, config) {
                         lowest: lowest.toFixed(1) ?? null,
                         indicator,
                         direction: config.direction,
-                        candles: nextCandles
                     });
                 } else {
                     // console.warn(`No signals found for ${symbol} at timestamp ${timestamp}`, indicator);
@@ -177,96 +173,6 @@ async function calculateIndicators(symbol, config) {
     }
 }
 
-const fetchNextCandles = async (symbol, referenceTimestamp, ohlcvData, lastClose, config) => {
-    try {
-        // Extract OHLCV arrays from the input
-        const { open, high, low, close, volume, timestamp } = ohlcvData;
-
-        // Find candles after the referenceTimestamp
-        const nextCandles = [];
-        const nextCloses = [];
-        let highest = -Infinity;
-        let lowest = Infinity;
-        let no = 0;
-
-        for (let i = 0; i < timestamp.length; i++) {
-            if (timestamp[i] > referenceTimestamp) {
-            const percentageHigh = (((high[i] - lastClose) / lastClose) * 100).toFixed(2);
-            const percentageLow = (((low[i] - lastClose) / lastClose) * 100).toFixed(2);
-            const percentageClose = (((close[i] - lastClose) / lastClose) * 100).toFixed(2);
-
-            if (high[i] > highest) {
-                highest = high[i];
-            }
-
-            if (low[i] < lowest) {
-                lowest = low[i];
-            }
-
-            no++; // Increase no by one
-            const highestPercentage = (((highest - lastClose) / lastClose) * 100).toFixed(2);
-            const lowestPercentage = (((lowest - lastClose) / lastClose) * 100).toFixed(2);
-            
-             // Calculate RSI and ROC for the next candles
-            const rsi_6 = await module.exports.rsi(6, 'close', ohlcvData);
-            const roc_10 = await module.exports.roc(10, 'close', ohlcvData);
- 
-             // calculate the stop loss and take profit in percentage
-            const roe = (lowestPercentage <= config.sl) ? config.sl : (highestPercentage >= config.tp) ? config.tp : 0;
-            let openRoe = 0;
-            if (roe === 0) {   openRoe = percentageClose; }
-
-            nextCandles.push({
-                "symbol": symbol,
-                "no": no, // Update no value
-                "time": new Date(timestamp[i]).toLocaleString('en-GB', { hour12: false }),
-                // "open": open[i],
-                "high": high[i],
-                "low": low[i],
-                "close": close[i],
-                // "volume": volume[i],
-                "price": lastClose,
-                "highp": percentageHigh,
-                "lowp": percentageLow,
-                // "highest" :highest,
-                // "lowest": lowest,
-                "highestp" : highestPercentage,
-                "lowestp" : lowestPercentage,
-                "rsi_6": rsi_6 ? rsi_6[i]?.toFixed(2) : null,
-                "roc_10": roc_10 ? roc_10[i]?.toFixed(2) : null,
-                "roe": roe,
-                "openRoe": Math.round(openRoe),
-                // "referenceTimestamp": referenceTimestamp
-            });
-
-            nextCloses.push(close[i]);
-
-           
-            if (roe !== 0) {
-                // console.log(`Signal ROE for ${symbol} of ${roe} at timestamp ${new Date(referenceTimestamp).toLocaleString('en-GB', { hour12: false })}`);
-                // skip to next signal if the roe is not 0
-                break;
-
-            }
-
-            //remove last candle from the olchvData to get the next candles olchvData
-            ohlcvData = { open: open.slice(0, -1), high: high.slice(0, -1), low: low.slice(0, -1), close: close.slice(0, -1), volume: volume.slice(0, -1), timestamp: timestamp.slice(0, -1) };
-            // console.log(`Candle: ${symbol}, ${new Date(timestamp[i]).toLocaleString('en-GB', { hour12: false })}, O:${open[i]}, H:${high[i]}, L:${low[i]}, C:${close[i]}, V:${volume[i]}, LC:${lastClose}, PH:${percentageHigh}%, PL:${percentageLow}%, H:${highest}, L:${lowest}, PH:${highestPercentage}%, PL:${lowestPercentage}%`);
-
-            }
-        }
- 
-        // console.log (nextCandles) as an table in console
-        if (nextCandles.length > 0){
-            console.table(nextCandles);
-        }
-
-        return nextCandles; // Return the filtered and structured candles as an array of objects
-    } catch (error) {
-        console.error("Error fetching next candles:", error.message);
-        return [];
-    }
-};
 
 // Function to run concurrent tasks
 async function runConcurrentTasks(chunk, config) {
@@ -338,7 +244,11 @@ const main = async () => {
     console.time('Bot Run Time');
 
     try {
-        console.log('Starting main function');
+
+        // if return type is json disable the console.log
+        if (returnType !== 'json') {
+          console.log('Starting main function');
+        }
 
         // if custom symbols are provided, use them instead of fetching all tickers
         let customSymbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'LTCUSDT', 'ADAUSDT', 'BNBUSDT', 'DOTUSDT', 'LINKUSDT', 'XLMUSDT', 'BCHUSDT', 'UNIUSDT', 'DOGEUSDT', 'SOLUSDT', 'MATICUSDT', 'ICPUSDT', 'ETCUSDT', 'VETUSDT', 'FILUSDT', 'TRXUSDT', 'EOSUSDT', 'AAVEUSDT', 'XTZUSDT', 'THETAUSDT', 'ATOMUSDT', 'NEOUSDT', 'MKRUSDT', 'XMRUSDT', 'CROUSDT', 'ALGOUSDT', 'KSMUSDT', 'SHIBUSDT', 'COMPUSDT', 'SNXUSDT', 'YFIUSDT', 'FTTUSDT', 'HTUSDT', 'CELUSDT', 'ENJUSDT', 'BATUSDT', 'MANAUSDT', 'SUSHIUSDT', 'ZRXUSDT', 'GRTUSDT', 'CHZUSDT', 'STORJUSDT', 'ANKRUSDT', '1INCHUSDT', 'BNTUSDT', 'SKLUSDT', 'BATUSDT', 'CVCUSDT', 'SANDUSDT', 'LRCUSDT', 'RLCUSDT', 'DGBUSDT', 'DENTUSDT', 'HOTUSDT', 'RVNUSDT', 'WINUSDT', 'SCUSDT', 'STMXUSDT', 'DODOUSDT', 'TWTUSDT', 'REEFUSDT', 'MTLUSDT', 'DIAUSDT', 'OCEANUSDT', 'TLMUSDT', 'LINAUSDT', 'PERLUSDT', 'COTIUSDT', 'CTSIUSDT', 'STMXUSDT', 'DGBUSDT', 'DENTUSDT', 'HOTUSDT', 'RVNUSDT', 'WINUSDT', 'SCUSDT', 'STMXUSDT', 'DODOUSDT', 'TWTUSDT', 'REEFUSDT', 'MTLUSDT', 'DIAUSDT', 'OCEANUSDT', 'TLMUSDT', 'LINAUSDT', 'PERLUSDT'];
@@ -357,6 +267,8 @@ const main = async () => {
         }
 
         const usdtSymbols = limitedSymbols.filter(symbol => symbol.endsWith('USDT'));
+        // console.log(`Total USDT symbols found: ${usdtSymbols.length}`);
+
         limitedSymbols = usdtSymbols.slice(0, symbolLimit);
 
         // remove some symbols from the array
@@ -367,10 +279,15 @@ const main = async () => {
             }
         });
 
+        
+        if (returnType !== 'json') {
+            console.log(`Total limitedSymbols: ${limitedSymbols.length}`);
+        }
+
         // const cleanedSymbols = limitedSymbols.map(symbol => symbol.replace(':USDT', ''));
         const symbolChunks = chunk(limitedSymbols, 20);
 
-        const configKey = process.argv[4];
+        const configKey = process.argv[3];
 
         const configsToProcess = configKey === 'all'
             ? signalsConfig
@@ -383,17 +300,15 @@ const main = async () => {
 
         const allRsiValues = [];
         const allSignalSymbols = new Set();
-        let backtestedSignals = [];
+        let liveSignals = [];
 
         for (const config of configsToProcess) {
-            console.log(`Processing configuration: ${config.name}`);
+            // console.log(`Processing configuration: ${config.name}`);
             for (const chunk of symbolChunks) {
                 const { signals, results } = await runConcurrentTasks(chunk, config);
+                liveSignals.push(...signals);
 
-                const chunkBacktestedSignals = backtestSignals(signals, config.sl, config.tp);
-                backtestedSignals = backtestedSignals.concat(chunkBacktestedSignals);
-
-                console.log('---------------------------------');
+                // console.log('---------------------------------');
 
                 const rsiKeys = Object.keys(config.indicators).filter(key => key.startsWith('rsi'));
                 rsiKeys.forEach(key => {
@@ -408,54 +323,46 @@ const main = async () => {
                 signals.forEach(signal => {
                     allSignalSymbols.add(signal.symbol);
                 });
+
+                //wait for 1 second before processing the next chunk
+                // await new Promise(resolve => setTimeout(resolve, 500));
             }
         }
 
+        let averageRsi = 0;
         const activeBotConfig = configsToProcess.map(config => `${config.name}, ${config.backtrack}, ${config.interval}, ${config.direction}, ${JSON.stringify(config.indicators)}`).join(' | ');
-        console.log(`FINAL BACKTESTING RESULT - Bot Config: ${activeBotConfig}`);
-        console.log('---------------------------------');
-
-        console.table(backtestedSignals);
+       
 
         if (allRsiValues.length > 0) {
-            const averageRsi = allRsiValues.reduce((sum, value) => sum + parseFloat(value), 0) / allRsiValues.length;
-            console.log(`Average RSI for all symbols ${allRsiValues.length}: ${averageRsi.toFixed(1)}`, allRsiValues.length);
+             averageRsi = allRsiValues.reduce((sum, value) => sum + parseFloat(value), 0) / allRsiValues.length;
+            if (returnType !== 'json') {
+                console.log(`Average RSI for all symbols ${allRsiValues.length}: ${averageRsi.toFixed(1)}`, allRsiValues.length);
+            }
         } else {
-            console.log('No RSI values found.');
+            if (returnType !== 'json') {
+                console.log('No RSI values found.');
+            }
         }
 
-        const tp = signalsConfig.find(config => config.name === configKey).tp;
-        const sl = signalsConfig.find(config => config.name === configKey).sl;
+        if (returnType !== 'json') {
+            console.log(`FINAL BACKTESTING RESULT - Bot Config: ${activeBotConfig}`);
+            console.log('---------------------------------');
+            console.table(liveSignals);
+            console.log(`Total signals found: ${liveSignals.length}`);
+            console.log(`Symbols in signals: ${allSignalSymbols.size} of ${limitedSymbols.length}`);
+            }
 
-        // Get Total signals hitting TP 
-        const totalSignals = backtestedSignals.length;
-        const totalHitTP = backtestedSignals.filter(signal => signal.highestp > tp);
-        const totalHitSL = backtestedSignals.filter(signal => signal.lowestp < sl);
-
-        
-        const totalWinsRoe =  backtestedSignals.filter(signal => signal.roe >= tp);
-        const totalLossRoe =  backtestedSignals.filter(signal => signal.roe <= sl);
-        //sum of open roe
-        const totalOpenRoe = backtestedSignals.reduce((sum, signal) => sum + signal.openRoe, 0)?? 0;
-
-        console.log(`Total signals found: ${totalSignals}`);
-        console.log(`Symbols in signals: ${allSignalSymbols.size} of ${limitedSymbols.length}`);
-        console.log(`Total signals hitting TP: ${totalHitTP.length} LS: ${totalHitTP.length}`);
-
-        console.log(`Win: ${totalWinsRoe.length} Loss: ${totalLossRoe.length} | Win Value: ${totalWinsRoe.reduce((sum, signal) => sum + signal.roe, 0)} Loss Value: ${totalLossRoe.reduce((sum, signal) => sum + signal.roe, 0)}`);
-        
-        const winRate = totalWinsRoe.length / (totalWinsRoe.length + totalLossRoe.length) * 100;
-        console.log(`Win Rate: ${winRate.toFixed(2)}%  |  Total OpenRoe: ${totalOpenRoe}`);
-        console.log(`SUM OF ROE: ${backtestedSignals.reduce((sum, signal) => sum + signal.roe, 0)}`);
-
-
+        console.log(JSON.stringify(liveSignals, allSignalSymbols, averageRsi));
 
     } catch (error) {
         console.error('Error running main task:', error);
     }
-    console.timeEnd('Bot Run Time');
+
+    if (returnType !== 'json') {
+        console.timeEnd('Bot Run Time');
+    }
 };
 
 main().then((allSignals) => {
-    console.log('Main function completed.');
+    // console.log('Main function completed.');
 });

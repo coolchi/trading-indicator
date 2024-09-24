@@ -67,11 +67,13 @@ const fetchAllTickers = async (exchangeId) => {
     }
 };
 
+
 // Function to get OHLCV and calculate indicators
 async function calculateIndicators(symbol, config) {
     const { interval, indicators, name, backtrack } = config;
 
     try {
+        
         const ohlcvData = await module.exports.getDetachSourceFromOHLCV(exchangeId, symbol, interval, true);
         // console.log(ohlcvData);
 
